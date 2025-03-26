@@ -21,7 +21,7 @@ Webpify is a simple Python application that converts images to the WebP format. 
 Run the application from the command line:
 
 ```bash
-python -m webpify [path] [-o OUTPUT] [-q QUALITY] [-m MIME_TYPES] [-s SKIP_TYPES]
+python -m webpify [path] [-o OUTPUT] [-q QUALITY] [-m MIME_TYPES] [-s SKIP_TYPES] [--delete]
 ```
 
 ### Arguments:
@@ -30,12 +30,13 @@ python -m webpify [path] [-o OUTPUT] [-q QUALITY] [-m MIME_TYPES] [-s SKIP_TYPES
 - `-q, --quality`: Quality of the WebP images (default: 80).
 - `-m, --mime-types`: List of image MIME types to convert (default: JPEG, PNG, GIF).
 - `-s, --skip-types`: List of image MIME types to skip (default: WebP).
+- `--delete`: Delete original files after conversion.
 
 ### Example:
-Convert all images in the `images` folder to WebP format with 90% quality and save them in the `output` folder:
+Convert all images in the `images` folder to WebP format with 90% quality, save them in the `output` folder, and delete the original files:
 
 ```bash
-python -m webpify images -o output -q 90
+python -m webpify images -o output -q 90 --delete
 ```
 
 ## Dependencies
