@@ -2,11 +2,11 @@ import os
 import argparse
 from pathlib import Path
 from PIL import Image
-import multiprocessing # Import the multiprocessing module
-import functools # For passing multiple arguments with starmap
+import multiprocessing
+import functools
 import logging
 from tqdm import tqdm
-import time  # Import the time module
+import time
 
 # Predefined lists of image mime types
 DEFAULT_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"]
