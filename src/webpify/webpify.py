@@ -6,6 +6,7 @@ import multiprocessing # Import the multiprocessing module
 import functools # For passing multiple arguments with starmap
 import logging
 from tqdm import tqdm
+import time  # Import the time module
 
 # Predefined lists of image mime types
 DEFAULT_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"]
@@ -97,8 +98,15 @@ def convert_to_webp_parallel(input_path, output_path, quality, mime_types, skip_
     logging.info(f"Found {len(tasks)} potential images to process.")
     logging.info(f"Starting conversion with {os.cpu_count()} worker processes...")
 
+    # Start timing the conversion process
+    start_time = time.time()
+
     with multiprocessing.Pool(processes=os.cpu_count()) as pool:
         results = list(tqdm(pool.starmap(_process_single_image, tasks), total=len(tasks)))
+
+    # End timing the conversion process
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
     processed_count = sum(1 for msg in results if "Converted" in msg)
     error_count = sum(1 for msg in results if "Error" in msg)
@@ -109,6 +117,7 @@ def convert_to_webp_parallel(input_path, output_path, quality, mime_types, skip_
     logging.info(f"Successfully converted: {processed_count}")
     logging.info(f"Skipped: {skipped_count}")
     logging.info(f"Errors: {error_count}")
+    logging.info(f"Total time taken: {elapsed_time:.2f} seconds")
     logging.info("Conversion process finished.")
 
 # --- Main Execution Block ---
