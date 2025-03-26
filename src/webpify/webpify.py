@@ -12,25 +12,20 @@ import time  # Import the time module
 DEFAULT_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"]
 DEFAULT_SKIP_TYPES = ["image/webp"]
 
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 # --- Worker Function ---
 # This function processes a single image file.
 # It needs to be defined at the top level so multiprocessing can pickle it.
-def _process_single_image(args_tuple):
+def _process_single_image(file_path, input_path_base, output_path_base, quality, mime_types, skip_types, delete_original):
     """Worker function to convert a single image to WebP."""
-    # Unpack arguments passed via starmap
-    file_path, input_path_base, output_path_base, quality, mime_types, skip_types, delete_original = args_tuple
-
     try:
-        # Skip files that are already in WebP format (redundant check, but safe)
+        # Skip files that are already in WebP format (redundant check, but safer)
         if file_path.suffix.lower() == ".webp":
-            # This check might be better placed before adding to the task list,
-            # but keeping it here ensures worker robustness.
-            # print(f"Skipping {file_path} (already in WebP format)")
             return f"Skipped (already WebP): {file_path}"
 
         # Open the image and check its mime type
         with Image.open(file_path) as img:
-            # Ensure img.format is not None before accessing MIME type
             if img.format is None:
                 return f"Skipped (unknown format): {file_path}"
 
@@ -57,7 +52,6 @@ def _process_single_image(args_tuple):
                     file_path.unlink()
                     result_msg += f" | Deleted original {file_path}"
                 except Exception as del_e:
-                    # Handle potential deletion errors separately
                     result_msg += f" | FAILED to delete original {file_path}: {del_e}"
 
             return result_msg
@@ -112,12 +106,16 @@ def convert_to_webp_parallel(input_path, output_path, quality, mime_types, skip_
     error_count = sum(1 for msg in results if "Error" in msg)
     skipped_count = sum(1 for msg in results if "Skipped" in msg)
 
+    # Calculate average processing speed
+    avg_speed = len(tasks) / elapsed_time if elapsed_time > 0 else 0
+
     logging.info("--- Conversion Summary ---")
     logging.info(f"Total tasks: {len(tasks)}")
     logging.info(f"Successfully converted: {processed_count}")
     logging.info(f"Skipped: {skipped_count}")
     logging.info(f"Errors: {error_count}")
     logging.info(f"Total time taken: {elapsed_time:.2f} seconds")
+    logging.info(f"Average processing speed: {avg_speed:.2f} images/second")
     logging.info("Conversion process finished.")
 
 # --- Main Execution Block ---
@@ -145,8 +143,8 @@ def main():
 
 # --- IMPORTANT: Multiprocessing Guard ---
 # This ensures the Pool is only created when the script is run directly,
-# crucial on platforms like Windows.
+# crucial on platforms like Windows!!
 if __name__ == "__main__":
-    # Ensure Pillow uses the correct MIME types (usually automatic, but good practice)
+    # Ensure Pillow uses the correct MIME types (usually automatic, but good practice ig)
     Image.init()
     main()
