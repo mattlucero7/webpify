@@ -9,12 +9,14 @@ Webpify is a simple Python application that converts images to the WebP format. 
 - Flexible input and output directory options.
 
 ## Installation
+```bash
+pip install webpify
+```
+### Requirements
+1. Ensure you have Python 3.9 or higher installed. 
+   - Get Python from their [official website](https://www.python.org/downloads/).
 
-1. Ensure you have Python 3.9 or higher installed.
-2. Install Webpify using pip:
-   ```bash
-   pip install webpify
-   ```
+
 
 ## Usage
 
