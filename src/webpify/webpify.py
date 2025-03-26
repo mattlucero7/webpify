@@ -2,6 +2,7 @@ import os
 import argparse
 from pathlib import Path
 from PIL import Image
+import time
 
 # Predefined lists of image mime types
 DEFAULT_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"]
@@ -9,6 +10,12 @@ DEFAULT_SKIP_TYPES = ["image/webp"]
 
 def convert_to_webp(input_path, output_path, quality, mime_types, skip_types, delete_original):
     """Converts images in the given path to WebP format."""
+    start_time = time.time()
+    total_tasks = 0
+    successfully_converted = 0
+    skipped = 0
+    errors = 0
+
     input_path = Path(input_path)
     output_path = Path(output_path)
 
@@ -21,10 +28,12 @@ def convert_to_webp(input_path, output_path, quality, mime_types, skip_types, de
 
     for root, _, files in os.walk(input_path):
         for file in files:
+            total_tasks += 1
             file_path = Path(root) / file
             try:
                 # Skip files that are already in WebP format
                 if file_path.suffix.lower() == ".webp":
+                    skipped += 1
                     print(f"Skipping {file_path} (already in WebP format)")
                     continue
 
@@ -32,16 +41,19 @@ def convert_to_webp(input_path, output_path, quality, mime_types, skip_types, de
                 with Image.open(file_path) as img:
                     # Ensure img.format is not None before accessing MIME type
                     if img.format is None:
+                        skipped += 1
                         print(f"Skipping {file_path} (unknown image format)")
                         continue
 
                     mime_type = Image.MIME.get(img.format)
 
                     if mime_type in skip_types:
+                        skipped += 1
                         print(f"Skipping {file_path} (mime type: {mime_type})")
                         continue
 
                     if mime_type not in mime_types:
+                        skipped += 1
                         print(f"Skipping {file_path} (unsupported mime type: {mime_type})")
                         continue
 
@@ -51,6 +63,7 @@ def convert_to_webp(input_path, output_path, quality, mime_types, skip_types, de
                     output_file.parent.mkdir(parents=True, exist_ok=True)
 
                     img.save(output_file, "WEBP", quality=quality)
+                    successfully_converted += 1
                     print(f"Converted {file_path} to {output_file}")
 
                     # Delete original file if delete_original is True
@@ -59,7 +72,21 @@ def convert_to_webp(input_path, output_path, quality, mime_types, skip_types, de
                         print(f"Deleted original file {file_path}")
 
             except Exception as e:
+                errors += 1
                 print(f"Error processing {file_path}: {e}")
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    avg_speed = successfully_converted / total_time if total_time > 0 else 0
+
+    print("\n--- Conversion Summary ---")
+    print(f"Total tasks: {total_tasks}")
+    print(f"Successfully converted: {successfully_converted}")
+    print(f"Skipped: {skipped}")
+    print(f"Errors: {errors}")
+    print(f"Total time taken: {total_time:.2f} seconds")
+    print(f"Average processing speed: {avg_speed:.2f} images/second")
+    print("Conversion process finished.")
 
 def main():
     parser = argparse.ArgumentParser(description="Convert images to WebP format.")
