@@ -4,6 +4,8 @@ from pathlib import Path
 from PIL import Image
 import multiprocessing # Import the multiprocessing module
 import functools # For passing multiple arguments with starmap
+import logging
+from tqdm import tqdm
 
 # Predefined lists of image mime types
 DEFAULT_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"]
@@ -65,75 +67,49 @@ def _process_single_image(args_tuple):
 # --- Main Conversion Logic ---
 def convert_to_webp_parallel(input_path, output_path, quality, mime_types, skip_types, delete_original):
     """Converts images in the given path to WebP format using multiprocessing."""
-    input_path = Path(input_path).resolve() # Use resolved paths
+    input_path = Path(input_path).resolve()
     output_path = Path(output_path).resolve()
 
     if not input_path.exists():
-        print(f"Error: The input path {input_path} does not exist.")
+        logging.error(f"The input path {input_path} does not exist.")
         return
 
     if not output_path.exists():
-        print(f"Creating output directory: {output_path}")
+        logging.info(f"Creating output directory: {output_path}")
         output_path.mkdir(parents=True, exist_ok=True)
 
     tasks = []
-    print("Scanning for image files...")
+    logging.info("Scanning for image files...")
     for root, _, files in os.walk(input_path):
         current_dir = Path(root)
         for file in files:
             file_path = current_dir / file
-            # Basic filtering before adding to task list (optional, but efficient)
             if file_path.suffix.lower() == ".webp":
                 continue
-            # Add more filtering here if needed (e.g., based on simple suffix before opening)
-
-            # Prepare arguments for the worker function
-            # Pass base paths as resolved Paths
-            args_tuple = (
-                file_path,
-                input_path, # Pass the resolved base input path
-                output_path, # Pass the resolved base output path
-                quality,
-                mime_types,
-                skip_types,
-                delete_original
-            )
-            tasks.append(args_tuple)
+            tasks.append((
+                file_path, input_path, output_path, quality, mime_types, skip_types, delete_original
+            ))
 
     if not tasks:
-        print("No eligible image files found to convert.")
+        logging.info("No eligible image files found to convert.")
         return
 
-    print(f"Found {len(tasks)} potential images to process.")
-    print(f"Starting conversion with {os.cpu_count()} worker processes...")
+    logging.info(f"Found {len(tasks)} potential images to process.")
+    logging.info(f"Starting conversion with {os.cpu_count()} worker processes...")
 
-    # Use multiprocessing Pool with context manager
-    # Defaults to os.cpu_count() processes
-    with multiprocessing.Pool() as pool:
-        # Use starmap to pass multiple arguments to the worker function
-        results = pool.starmap(_process_single_image, tasks)
+    with multiprocessing.Pool(processes=os.cpu_count()) as pool:
+        results = list(tqdm(pool.starmap(_process_single_image, tasks), total=len(tasks)))
 
-    print("\n--- Conversion Summary ---")
-    # Print results/status from each task
-    processed_count = 0
-    error_count = 0
-    skipped_count = 0
-    for msg in results:
-        print(msg)
-        if "Converted" in msg:
-            processed_count += 1
-        elif "Error" in msg:
-            error_count += 1
-        elif "Skipped" in msg:
-            skipped_count += 1
+    processed_count = sum(1 for msg in results if "Converted" in msg)
+    error_count = sum(1 for msg in results if "Error" in msg)
+    skipped_count = sum(1 for msg in results if "Skipped" in msg)
 
-    print("---")
-    print(f"Total tasks: {len(tasks)}")
-    print(f"Successfully converted: {processed_count}")
-    print(f"Skipped: {skipped_count}")
-    print(f"Errors: {error_count}")
-    print("Conversion process finished.")
-
+    logging.info("--- Conversion Summary ---")
+    logging.info(f"Total tasks: {len(tasks)}")
+    logging.info(f"Successfully converted: {processed_count}")
+    logging.info(f"Skipped: {skipped_count}")
+    logging.info(f"Errors: {error_count}")
+    logging.info("Conversion process finished.")
 
 # --- Main Execution Block ---
 def main():
