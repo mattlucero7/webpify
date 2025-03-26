@@ -2,3 +2,6 @@ desktop.ini
 .timetracker
 .venv
 .idea
+dist
+.pypirc
+__pycache__/
