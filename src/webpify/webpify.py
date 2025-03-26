@@ -7,7 +7,7 @@ from PIL import Image
 DEFAULT_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"]
 DEFAULT_SKIP_TYPES = ["image/webp"]
 
-def convert_to_webp(input_path, output_path, quality, mime_types, skip_types):
+def convert_to_webp(input_path, output_path, quality, mime_types, skip_types, delete_original):
     """Converts images in the given path to WebP format."""
     input_path = Path(input_path)
     output_path = Path(output_path)
@@ -53,6 +53,11 @@ def convert_to_webp(input_path, output_path, quality, mime_types, skip_types):
                     img.save(output_file, "WEBP", quality=quality)
                     print(f"Converted {file_path} to {output_file}")
 
+                    # Delete original file if delete_original is True
+                    if delete_original:
+                        file_path.unlink()
+                        print(f"Deleted original file {file_path}")
+
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")
 
@@ -63,6 +68,7 @@ def main():
     parser.add_argument("-q", "--quality", type=int, default=80, help="Quality of the WebP images (default: 80).")
     parser.add_argument("-m", "--mime-types", nargs="*", default=DEFAULT_MIME_TYPES, help="List of image mime types to convert (default: common types).")
     parser.add_argument("-s", "--skip-types", nargs="*", default=DEFAULT_SKIP_TYPES, help="List of image mime types to skip (default: WebP).")
+    parser.add_argument("--delete", action="store_true", help="Delete original files after conversion.")
 
     args = parser.parse_args()
 
@@ -71,7 +77,8 @@ def main():
         output_path=args.output,
         quality=args.quality,
         mime_types=args.mime_types,
-        skip_types=args.skip_types
+        skip_types=args.skip_types,
+        delete_original=args.delete
     )
 
 if __name__ == "__main__":
